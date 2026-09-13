@@ -1,0 +1,15 @@
+specVersion: 0.0.4
+description: Provenance deterministic reward history
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: substreams
+    name: provenance
+    network: sepolia
+    source:
+      package:
+        moduleName: graph_out
+        file: ../oracle/provenance.spkg
+    mapping:
+      kind: substreams/graph-entities
+      apiVersion: 0.0.7

@@ -1,0 +1,18 @@
+type Reward @entity(immutable: true) {
+  id: ID!
+  agentNode: String!
+  instrumentId: String!
+  block: BigInt!
+  blockHash: String!
+  txHash: String!
+  hedge: Int!
+  slippage: Int!
+  mandate: Int!
+  staleness: Int!
+  routeRegret: Int!
+  routeRegretStub: Boolean!
+  verified: Int!
+  position: String!
+  mark: String!
+  intentId: String!
+}
