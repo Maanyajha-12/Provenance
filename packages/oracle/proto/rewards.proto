@@ -1,0 +1,17 @@
+syntax = "proto3";
+package provenance.v1;
+message Event {
+ string kind = 1; string agent_node = 2; string instrument_id = 3;
+ string intent_id = 4; string fill_id = 5; uint64 ordinal = 6;
+ repeated string values = 7; string tx_hash = 8;
+}
+message Events { uint64 block = 1; uint64 timestamp = 2; string block_hash = 3; repeated Event events = 4; }
+message Reward {
+ string id = 1; string agent_node = 2; string instrument_id = 3;
+ uint64 block = 4; string block_hash = 5; string tx_hash = 6;
+ int32 hedge = 7; int32 slippage = 8; int32 mandate = 9;
+ int32 staleness = 10; int32 route_regret = 11; bool route_regret_stub = 12;
+ int32 verified = 13; string position = 14; string mark = 15;
+ string intent_id = 16; uint64 ordinal = 17;
+}
+message Rewards { repeated Reward rewards = 1; }

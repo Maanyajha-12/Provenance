@@ -1,0 +1,63 @@
+specVersion: v0.1.0
+package:
+  name: provenance_rewards
+  version: v0.1.0
+  description: Integer-only process rewards from Provenance Sepolia desk fills.
+protobuf:
+  files:
+    - rewards.proto
+    - entity.proto
+  importPaths:
+    - ./proto
+binaries:
+  default:
+    type: wasm/rust-v1
+    file: ./target/wasm32-unknown-unknown/release/provenance_oracle.wasm
+network: sepolia
+modules:
+  - name: map_events
+    kind: map
+    initialBlock: 0
+    inputs:
+      - params: string
+      - source: sf.ethereum.type.v2.Block
+    output:
+      type: proto:provenance.v1.Events
+  - name: store_marks
+    kind: store
+    updatePolicy: set
+    valueType: string
+    inputs:
+      - map: map_events
+  - name: store_mandates
+    kind: store
+    updatePolicy: set
+    valueType: string
+    inputs:
+      - map: map_events
+  - name: store_positions
+    kind: store
+    updatePolicy: add
+    valueType: bigint
+    inputs:
+      - map: map_events
+  - name: map_rewards
+    kind: map
+    inputs:
+      - map: map_events
+      - store: store_positions
+        mode: get
+      - store: store_marks
+        mode: get
+      - store: store_mandates
+        mode: get
+    output:
+      type: proto:provenance.v1.Rewards
+  - name: graph_out
+    kind: map
+    inputs:
+      - map: map_rewards
+    output:
+      type: proto:sf.substreams.sink.entity.v1.EntityChanges
+params:
+  map_events: desk=PLACEHOLDER&marks=PLACEHOLDER&authority=
