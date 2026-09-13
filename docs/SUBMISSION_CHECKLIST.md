@@ -17,9 +17,11 @@
 
 - [ ] The Graph: actual hosted Sepolia streaming, JWT authentication, public reusable package, reward history query, identical non-empty replay outputs.
 - [ ] 1inch: pinned official Aqua and SwapVM source, Sepolia deployment, custom authority opcode, ProgramFactory instruction encoding, real token transfers, CoreInvariants-derived tests and live revoke→revert proof.
-- [ ] ENSv2: actual beta UserRegistry/PermissionedResolver tree, current ENSIP-26 records, record-scoped permissions, lifecycle implemented as EAC role changes, transfers/expiry fail closed.
+- [ ] ENSv2: actual beta UserRegistry/PermissionedResolver tree, ENSIP-26 `agent-context` and `agent-endpoint[web]` records, record-scoped permissions, lifecycle implemented as EAC role changes, transfers/expiry fail closed.
 - [ ] Be explicit that route regret is stubbed, reporter marks concern faucet tokens, and the LLM judge cannot be recomputed from chain.
 - [ ] Validate the event's current prize requirements directly before submission; this document is an implementation evidence checklist, not a claim of sponsor approval.
+
+ENS identity scope is ENSIP-26 only. ENSIP-25 external registry association is not implemented and no ENSIP-25 compliance is claimed.
 
 ## Video outline (approximately 3 minutes)
 
