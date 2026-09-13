@@ -18,6 +18,7 @@ export async function executeIntent(
     functionName: "approve",
     args: [address("AGENT_DESK_ADDRESS"), intent.notional],
   });
+  console.log(`SUBMITTED approve desk: ${hash}`);
   if (
     (await publicClient.waitForTransactionReceipt({ hash })).status !==
     "success"
@@ -35,6 +36,7 @@ export async function executeIntent(
     ],
   });
   const fillHash = await wallet.writeContract(request);
+  console.log(`SUBMITTED execute: ${fillHash}`);
   const receipt = await publicClient.waitForTransactionReceipt({
     hash: fillHash,
   });

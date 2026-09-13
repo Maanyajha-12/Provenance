@@ -48,6 +48,7 @@ export async function seed() {
       functionName: "approve",
       args: [address("AQUA_ADDRESS"), amount],
     });
+    console.log(`SUBMITTED approve Aqua ${token}: ${hash}`);
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
     if (receipt.status !== "success") throw new Error("Approval failed");
   }
@@ -65,6 +66,7 @@ export async function seed() {
     to: address("AQUA_ADDRESS"),
     data: tx.data.toString() as Hex,
   });
+  console.log(`SUBMITTED ship: ${hash}`);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success") throw new Error("Ship failed");
   await mkdir("data", { recursive: true });
