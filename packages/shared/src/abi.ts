@@ -10,8 +10,8 @@ export const registryAbi = parseAbi([
   "function getOwner(uint256 id) view returns (address)",
   "function getExpiry(uint256 id) view returns (uint64)",
   "function hasRoles(uint256 id,uint256 roles,address account) view returns (bool)",
-  "function grantRoles(uint256 id,uint256 roles,address account)",
-  "function revokeRoles(uint256 id,uint256 roles,address account)",
+  "function grantRoles(uint256 id,uint256 roles,address account) returns (bool)",
+  "function revokeRoles(uint256 id,uint256 roles,address account) returns (bool)",
 ]);
 export const resolverAbi = parseAbi([
   "function text(bytes32 node,string key) view returns (string)",
