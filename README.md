@@ -1,60 +1,54 @@
-Provenance — Phases 1–3
+# Provenance
 
-This repository delivers the foundation, ENS-style organization model, and mandate authority layer for a Sepolia-first agent fund. It intentionally stops before execution, Aqua liquidity, SwapVM, and the reward oracle.
+A Sepolia-first agent fund with process rewards that can be recomputed from public execution events. ENSv2 controls agent authority, official-source Aqua and SwapVM execute trades, and a Rust Substreams oracle produces deterministic reward vectors. A backend allocates capital and submits lifecycle decisions; Next.js makes the loop visible.
 
-## Delivered scope
+Local execution tests use real pinned Aqua/SwapVM contracts. **No live deployment or sponsor qualification is claimed.** Credentials and deployment addresses remain placeholders.
 
-### Phase 1 — foundations and provider gate
-
-- pnpm/TypeScript workspace and Foundry contract project
-- canonical intent, fill, and mandate interface contract
-- environment validation and a Sepolia RPC/provider-gate command
-- CI plus reproducible local contract tests
-
-### Phase 2 — fund, strategy, and agent identity
-
-- deterministic `fund → strategy → agent` hierarchy
-- controller-owned metadata records aligned with ENSIP-26 fields
-- onboarding command that outputs names, namehashes, controller, and metadata payload
-
-### Phase 3 — authority and mandates
-
-- allocator-only mandates: expiry, notional cap, slippage cap, instrument whitelist
-- lifecycle operations: `hire`, `promote`, and `fire`
-- fail-closed `IAgentAuthority` adapter for the future execution layer
-
-## Quick start
+## Start the credential-free demo
 
 ```bash
+corepack pnpm install --frozen-lockfile
 cp .env.example .env
-corepack pnpm install
-corepack pnpm check:env
-corepack pnpm check
-forge test --root contracts
-corepack pnpm agent:onboard momentum veriprocess.eth agent-01 0x000000000000000000000000000000000000a11c
+pnpm backend
+# In a second terminal:
+pnpm dev
 ```
 
-`pnpm provider:gate` is the Phase 1 live-RPC check. It requires `SEPOLIA_RPC_URL`; a successful result must show chain ID `11155111`.
+Open http://localhost:3000. Synthetic rewards, allocation changes and retirements are explicitly labeled demo data. The reproducibility panel stays pending until a real provider replay is recorded.
 
-## Production boundary
-
-The contracts are a complete local reference implementation with passing lifecycle tests. Before calling it an ENSv2 Sepolia deployment, replace the local registry and authority manager with verified ENSv2 Permissioned Registry, Permissioned Resolver, and Enhanced Access Control calls. The exact inputs and proof steps are in [external requirements](docs/EXTERNAL_REQUIREMENTS.md).
-
-## Repository layout
-
-| Path | Purpose |
-| --- | --- |
-| `contracts/` | identity registry, authority manager, stable authority adapter, tests |
-| `packages/shared/` | canonical cross-layer data contract frozen in Phase 1 |
-| `packages/ens/` | deterministic onboarding-plan generator |
-| `scripts/` | environment and Sepolia provider checks |
-| `docs/` | data contract, external requirements, and completion status |
-
-## Verification
+## Validate
 
 ```bash
-corepack pnpm check
+pnpm check
+pnpm test:backend
 forge test --root contracts
+pnpm oracle:test
+pnpm oracle:build
+pnpm build:frontend
 ```
 
-The test suite proves hierarchy ownership, agent-controlled identity records, mandate caps and whitelists, adapter authorization, revocation, and the hire → promote → fire lifecycle.
+Rust requires `wasm32-unknown-unknown`. Protobuf compiler binaries are supplied by the build dependency. Substreams CLI is needed for packing/streaming, not unit tests. The live ENS fork test skips without configured addresses.
+
+## Continue to Sepolia
+
+Follow [the runbook](docs/RUNBOOK.md) in order. Keep all external values in `.env` and [the agent binding configuration](config/agents.example.json); never commit secrets.
+
+- [External requirements](docs/EXTERNAL_REQUIREMENTS.md): every configuration key, its purpose and source.
+- [Implementation status](docs/IMPLEMENTATION_STATUS.md): tested local code versus outstanding live evidence.
+- [Shared data model](docs/SHARED_DATA_MODEL.md): exact intent/fill schema, units and reward semantics.
+- [Dependency pins](docs/DEPENDENCY_PINS.md): official source revisions and compatibility details.
+- [Submission checklist](docs/SUBMISSION_CHECKLIST.md): evidence links, sponsor checks and video outline.
+
+## Layout
+
+| Directory          | Purpose                                                                              |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| contracts          | ENS adapter, execution desk, custom official SwapVM router, market and Foundry tests |
+| packages/ens       | Deterministic onboarding, factory deployments and EAC lifecycle operations           |
+| packages/execution | Aqua SDK shipping and typed desk execution                                           |
+| packages/oracle    | Rust predicates, protobuf, Substreams DAG and entity sink                            |
+| packages/subgraph  | Substreams-powered subgraph schema/manifest                                          |
+| packages/backend   | LLM policy/judge, persistent allocator, live stream, API and demo                    |
+| packages/frontend  | Dashboard, wallet connection, history and replay view                                |
+
+The verifiable score excludes the LLM judge and the explicit route-regret stub. Public reporter marks describe faucet tokens; they do not claim an economically authoritative price. Offline improvement selects positive-advantage examples for future policy context, rather than claiming model-weight training.
