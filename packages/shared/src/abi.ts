@@ -14,6 +14,7 @@ export const registryAbi = parseAbi([
   "function revokeRoles(uint256 id,uint256 roles,address account) returns (bool)",
 ]);
 export const resolverAbi = parseAbi([
+  "function authorizeTextRoles(bytes toName,string key,address account,bool grant) returns (bool)",
   "function text(bytes32 node,string key) view returns (string)",
   "function setText(bytes32 node,string key,string value)",
 ]);
