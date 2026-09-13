@@ -13,9 +13,7 @@ contract FundIdentityRegistry {
     mapping(bytes32 => bytes32) public parentOf;
     mapping(bytes32 => mapping(bytes32 => string)) private records;
 
-    event NameRegistered(
-        bytes32 indexed node, bytes32 indexed parentNode, address indexed controller
-    );
+    event NameRegistered(bytes32 indexed node, bytes32 indexed parentNode, address indexed controller);
     event TextRecordChanged(bytes32 indexed node, bytes32 indexed key, string value);
 
     constructor(address admin) {
@@ -23,10 +21,7 @@ contract FundIdentityRegistry {
         controllerOf[bytes32(0)] = admin;
     }
 
-    function register(bytes32 parentNode, bytes32 label, address controller)
-        external
-        returns (bytes32 node)
-    {
+    function register(bytes32 parentNode, bytes32 label, address controller) external returns (bytes32 node) {
         if (controllerOf[parentNode] == address(0) && parentNode != bytes32(0)) {
             revert UnknownNode();
         }

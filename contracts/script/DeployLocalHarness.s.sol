@@ -9,11 +9,7 @@ import {AgentAuthorityAdapter} from "../src/AgentAuthorityAdapter.sol";
 contract DeployLocalHarness {
     function deploy(address allocator)
         external
-        returns (
-            FundIdentityRegistry identities,
-            AgentAuthorityManager authority,
-            AgentAuthorityAdapter adapter
-        )
+        returns (FundIdentityRegistry identities, AgentAuthorityManager authority, AgentAuthorityAdapter adapter)
     {
         identities = new FundIdentityRegistry(msg.sender);
         authority = new AgentAuthorityManager(allocator);

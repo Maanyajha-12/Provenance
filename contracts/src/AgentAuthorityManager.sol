@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.30;
 
+import {IAuthoritySnapshot} from "./IAuthoritySnapshot.sol";
+
 import {IAgentAuthority} from "./IAgentAuthority.sol";
 
 /// @notice Fail-closed authority and mandate engine used by the execution adapter.
@@ -27,13 +29,9 @@ contract AgentAuthorityManager is IAgentAuthority {
     address public immutable allocator;
     mapping(bytes32 => Mandate) private mandates;
 
-    event AuthorityChanged(
-        bytes32 indexed agentNode, bool active, uint48 validUntil, address indexed actor
-    );
+    event AuthorityChanged(bytes32 indexed agentNode, bool active, uint48 validUntil, address indexed actor);
     event MandateChanged(bytes32 indexed agentNode, uint128 maxNotional, uint16 maxSlippageBps);
-    event InstrumentPermissionChanged(
-        bytes32 indexed agentNode, bytes32 indexed instrumentId, bool allowed
-    );
+    event InstrumentPermissionChanged(bytes32 indexed agentNode, bytes32 indexed instrumentId, bool allowed);
     event AgentHired(bytes32 indexed agentNode, uint48 validUntil, address indexed allocator);
     event AgentPromoted(bytes32 indexed agentNode, uint128 maxNotional, uint16 maxSlippageBps);
     event AgentFired(bytes32 indexed agentNode, address indexed allocator);
@@ -61,10 +59,7 @@ contract AgentAuthorityManager is IAgentAuthority {
         emit MandateChanged(node, maxNotional, maxSlippageBps);
     }
 
-    function setInstrument(bytes32 node, bytes32 instrumentId, bool allowed)
-        external
-        onlyAllocator
-    {
+    function setInstrument(bytes32 node, bytes32 instrumentId, bool allowed) external onlyAllocator {
         mandates[node].allowedInstrument[instrumentId] = allowed;
         emit InstrumentPermissionChanged(node, instrumentId, allowed);
     }
@@ -75,13 +70,10 @@ contract AgentAuthorityManager is IAgentAuthority {
     }
 
     /// @notice Grants an active trade mandate with one initial instrument. Additional instruments use setInstrument.
-    function hire(
-        bytes32 node,
-        uint48 validUntil,
-        uint128 maxNotional,
-        uint16 maxSlippageBps,
-        bytes32 instrumentId
-    ) external onlyAllocator {
+    function hire(bytes32 node, uint48 validUntil, uint128 maxNotional, uint16 maxSlippageBps, bytes32 instrumentId)
+        external
+        onlyAllocator
+    {
         if (validUntil <= block.timestamp || maxNotional == 0 || maxSlippageBps > 10_000) revert InvalidMandate();
         Mandate storage mandate = mandates[node];
         mandate.validUntil = validUntil;
@@ -126,6 +118,17 @@ contract AgentAuthorityManager is IAgentAuthority {
     {
         Mandate storage mandate = mandates[node];
         return (mandate.active, mandate.validUntil, mandate.maxNotional, mandate.maxSlippageBps);
+    }
+
+    function mandateSnapshot(bytes32 node, bytes32 instrument)
+        external
+        view
+        returns (IAuthoritySnapshot.Snapshot memory)
+    {
+        Mandate storage m = mandates[node];
+        return IAuthoritySnapshot.Snapshot(
+            m.active, m.validUntil, m.maxNotional, m.maxSlippageBps, m.allowedInstrument[instrument]
+        );
     }
 
     function checkTrade(TradeRequest calldata request) external view returns (bool, bytes32) {

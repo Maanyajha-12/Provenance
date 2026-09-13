@@ -9,8 +9,5 @@ interface IAgentAuthority {
         uint256 maxSlippageBps;
     }
 
-    function checkTrade(TradeRequest calldata request)
-        external
-        view
-        returns (bool authorized, bytes32 reason);
+    function checkTrade(TradeRequest calldata request) external view returns (bool authorized, bytes32 reason);
 }

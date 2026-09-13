@@ -33,11 +33,7 @@ contract AuthorityTest {
         manager.setActive(agent, true);
     }
 
-    function request(uint256 notional, uint256 slippage)
-        internal
-        view
-        returns (IAgentAuthority.TradeRequest memory)
-    {
+    function request(uint256 notional, uint256 slippage) internal view returns (IAgentAuthority.TradeRequest memory) {
         return IAgentAuthority.TradeRequest(agent, instrument, notional, slippage);
     }
 
@@ -60,18 +56,12 @@ contract AuthorityTest {
     function testHirePromoteAndFireLifecycle() public {
         bytes32 newAgent = keccak256("agent-02");
         manager.hire(newAgent, uint48(block.timestamp + 1 days), 100 ether, 25, instrument);
-        assertTrue(
-            adapter.isAuthorized(IAgentAuthority.TradeRequest(newAgent, instrument, 100 ether, 25))
-        );
+        assertTrue(adapter.isAuthorized(IAgentAuthority.TradeRequest(newAgent, instrument, 100 ether, 25)));
 
         manager.promote(newAgent, uint48(block.timestamp + 2 days), 500 ether, 75);
-        assertTrue(
-            adapter.isAuthorized(IAgentAuthority.TradeRequest(newAgent, instrument, 500 ether, 75))
-        );
+        assertTrue(adapter.isAuthorized(IAgentAuthority.TradeRequest(newAgent, instrument, 500 ether, 75)));
 
         manager.fire(newAgent);
-        assertFalse(
-            adapter.isAuthorized(IAgentAuthority.TradeRequest(newAgent, instrument, 1 ether, 1))
-        );
+        assertFalse(adapter.isAuthorized(IAgentAuthority.TradeRequest(newAgent, instrument, 1 ether, 1)));
     }
 }
