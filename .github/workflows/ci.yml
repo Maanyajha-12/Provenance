@@ -6,10 +6,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: { version: 9 }
+        with: { version: 9.15.4 }
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm check
-      - run: curl -L https://foundry.paradigm.xyz | bash
-      - run: ~/.foundry/bin/foundryup && ~/.foundry/bin/forge test --root contracts
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check && pnpm test:backend
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: forge test --root contracts
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: pnpm oracle:test && pnpm oracle:build
+      - run: pnpm build:frontend

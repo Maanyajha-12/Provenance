@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: provenance
+      POSTGRES_USER: provenance
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a local Postgres password}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U provenance"]
+      interval: 5s
+      retries: 10
+  backend:
+    build: .
+    command: ["pnpm", "backend"]
+    env_file: .env
+    environment:
+      BACKEND_HOST: 0.0.0.0
+    ports: ["3001:3001"]
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+      - ./packages/oracle/provenance.spkg:/app/packages/oracle/provenance.spkg:ro
+      - ./.tools/substreams:/usr/local/bin/substreams:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+  frontend:
+    build: .
+    command:
+      [
+        "pnpm",
+        "exec",
+        "next",
+        "start",
+        "packages/frontend",
+        "--hostname",
+        "0.0.0.0",
+      ]
+    ports: ["3000:3000"]
+    depends_on: [backend]
+volumes:
+  postgres:
