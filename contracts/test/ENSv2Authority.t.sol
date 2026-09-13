@@ -32,6 +32,12 @@ contract ENSFixture {
 
     function revoke() external {
         active = false;
+        token++;
+    }
+
+    function grant() external {
+        active = true;
+        token++;
     }
 
     function transferName() external {
@@ -60,6 +66,28 @@ contract ENSv2AuthorityTest is Test {
         f.transferName();
         (ok,) = a.checkTrade(r);
         assertFalse(ok);
+    }
+
+    function testRoleChangesRequireBindingAfterFinalGrant() public {
+        ENSFixture f = new ENSFixture();
+        ENSv2Authority a = new ENSv2Authority(address(this), 1 << 80);
+        bytes32 node = bytes32(uint256(1));
+        IAgentAuthority.TradeRequest memory r = IAgentAuthority.TradeRequest(node, bytes32(0), 100, 10);
+        f.revoke();
+        a.bind(node, IENSRegistry(address(f)), IENSResolver(address(f)), 1, address(0xa));
+        f.grant();
+        (bool ok,) = a.checkTrade(r);
+        assertFalse(ok, "grant invalidates a pre-grant snapshot");
+        a.bind(node, IENSRegistry(address(f)), IENSResolver(address(f)), 1, address(0xa));
+        (ok,) = a.checkTrade(r);
+        assertTrue(ok, "binding after grant restores authority");
+        f.revoke();
+        f.grant();
+        (ok,) = a.checkTrade(r);
+        assertFalse(ok, "promotion requires a fresh binding too");
+        a.bind(node, IENSRegistry(address(f)), IENSResolver(address(f)), 1, address(0xa));
+        (ok,) = a.checkTrade(r);
+        assertTrue(ok);
     }
 
     function testLiveAdapterFork() public {

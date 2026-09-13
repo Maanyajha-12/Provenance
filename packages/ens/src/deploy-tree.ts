@@ -1,3 +1,4 @@
+import { agentIdentityRecords } from "./identity.js";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import {
   parseAbi,
@@ -19,7 +20,7 @@ import {
 } from "../../config/src/index.js";
 import { registryAbi, resolverAbi } from "../../shared/src/abi.js";
 const factoryAbi = parseAbi([
-  "function deployProxy(address implementation,uint256 salt,bytes data)",
+  "function deployProxy(address implementation,uint256 salt,bytes data) returns (address)",
   "event ProxyDeployed(address indexed sender,address indexed proxyAddress,uint256 salt,address implementation)",
 ]);
 const userAbi = parseAbi([
@@ -45,14 +46,17 @@ if (
   ![strategy, agentLabel].every((x) => /^[a-z0-9-]+$/.test(x))
 )
   throw new Error("Usage: ens:deploy-agent STRATEGY AGENT SIGNER_ADDRESS");
+// Validate identity configuration before submitting any transaction.
+const root = required("FUND_NAME");
+const agentName = `${agentLabel}.${strategy}.${root}`;
+const identity = agentIdentityRecords(agentName, required("AGENT_SERVICE_URL"));
 const { publicClient, wallet, account } = clients("ALLOCATOR_PRIVATE_KEY");
 await assertSepolia(publicClient);
 const deployer = clients("DEPLOYER_PRIVATE_KEY");
 const signer = signerArg as Address;
-const root = required("FUND_NAME");
-const strategyName = `${strategy}.${root}`;
-const agentName = `${agentLabel}.${strategyName}`;
+
 const node = namehash(agentName);
+console.log(`AGENT_NAME=${agentName} LIVE_AGENT_NODE=${node}`);
 const active = BigInt(required("ENS_ACTIVE_ROLE"));
 const registrar =
   (1n << 0n) | (1n << 8n) | (1n << 16n) | (1n << 20n) | (1n << 24n);
@@ -75,8 +79,10 @@ const save = () =>
   );
 async function send(request: Parameters<typeof wallet.writeContract>[0]) {
   const hash = await wallet.writeContract(request);
+  console.log(`SUBMITTED ${request.functionName}: ${hash}`);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success") throw new Error("ENS transaction reverted");
+  console.log(`CONFIRMED ${request.functionName}: ${hash}`);
   return receipt;
 }
 async function proxy(key: string, implementation: Address, data: Hex) {
@@ -97,6 +103,7 @@ async function proxy(key: string, implementation: Address, data: Hex) {
     eventName: "ProxyDeployed",
   })[0];
   if (!log) throw new Error("No ProxyDeployed event");
+  console.log(`${key}=${log.args.proxyAddress}`);
   checkpoint[key] = log.args.proxyAddress;
   await save();
   return checkpoint[key];
@@ -173,17 +180,6 @@ await send({
   functionName: "setAddr",
   args: [node, signer],
 });
-const identity: Record<string, string> = {
-  name: agentName,
-  description: "Provenance trading agent",
-  "agent-context": JSON.stringify({
-    name: agentName,
-    role: "trading-agent",
-    chainId: 11155111,
-    service: required("AGENT_SERVICE_URL"),
-  }),
-  "agent-endpoint[web]": required("AGENT_SERVICE_URL"),
-};
 for (const [key, value] of Object.entries(identity)) {
   await send({
     address: resolver,
@@ -220,17 +216,18 @@ for (const [key, value] of Object.entries(mandate))
     args: [node, key, value],
   });
 const labelId = BigInt(keccak256(toHex(agentLabel)));
-await send({
-  address: address("ENS_AUTHORITY_ADAPTER"),
-  abi: bindAbi,
-  functionName: "bind",
-  args: [node, strategyRegistry, resolver, labelId, signer],
-});
 const enrollmentReceipt = await send({
   address: strategyRegistry,
   abi: registryAbi,
   functionName: "grantRoles",
   args: [labelId, active, signer],
+});
+// Role grants regenerate the ENS token ID; snapshot only after the grant.
+await send({
+  address: address("ENS_AUTHORITY_ADAPTER"),
+  abi: bindAbi,
+  functionName: "bind",
+  args: [node, strategyRegistry, resolver, labelId, signer],
 });
 const hash = await deployer.wallet.writeContract({
   address: address("AGENT_DESK_ADDRESS"),
@@ -238,6 +235,7 @@ const hash = await deployer.wallet.writeContract({
   functionName: "setAgent",
   args: [node, signer],
 });
+console.log(`SUBMITTED setAgent: ${hash}`);
 if (
   (await publicClient.waitForTransactionReceipt({ hash })).status !== "success"
 )

@@ -1,3 +1,4 @@
+import { agentIdentityRecords } from "./identity.js";
 import { isAddress, namehash } from "viem";
 
 const [strategy, rootName, agentLabel, controller] = process.argv.slice(2);
@@ -24,19 +25,11 @@ const plan = {
     agent: namehash(agentName),
   },
   controller,
-  ensip26TextRecords: {
-    name: agentName,
-    role: "trading-agent",
-    "agent-context": JSON.stringify({
-      name: agentName,
-      role: "trading-agent",
-      chainId: 11155111,
-    }),
-    "agent-endpoint[web]":
-      process.env.AGENT_SERVICE_URL ||
+  ensip26TextRecords: agentIdentityRecords(
+    agentName,
+    process.env.AGENT_SERVICE_URL ||
       "https://replace-with-agent-service.example",
-    agentId: agentLabel,
-  },
+  ),
   nextStep:
     "Submit these names and records through the verified ENSv2 Permissioned Registry/Resolver deployment.",
 };

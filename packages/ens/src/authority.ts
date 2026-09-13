@@ -1,4 +1,4 @@
-import type { Hex } from "viem";
+import { parseAbi, type Hex } from "viem";
 import {
   address,
   clients,
@@ -90,7 +90,7 @@ export function authorityPort(): AuthorityPort {
           functionName: "setText",
           args: [a.node, key, value],
         });
-      return send({
+      const grantHash = await send({
         address: a.registry,
         abi: registryAbi,
         functionName: "grantRoles",
@@ -100,6 +100,17 @@ export function authorityPort(): AuthorityPort {
           a.signer,
         ],
       });
+      // Revocation and re-grant both regenerate the token ID. Refresh the snapshot
+      // only after the final grant; until then the old binding remains fail-closed.
+      await send({
+        address: address("ENS_AUTHORITY_ADAPTER"),
+        abi: parseAbi([
+          "function bind(bytes32,address,address,uint256,address)",
+        ]),
+        functionName: "bind",
+        args: [a.node, a.registry, a.resolver, BigInt(a.labelId), a.signer],
+      });
+      return grantHash;
     },
   };
 }
