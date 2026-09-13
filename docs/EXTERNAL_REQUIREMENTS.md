@@ -117,3 +117,5 @@ Each entry has `node` (namehash), `name` (full ENS name), `registry`, `resolver`
 `SUBGRAPH_DEPLOY_URL` and `SUBGRAPH_IPFS_URL`: Studio (or compatible Graph Node) deployment and IPFS endpoints; defaults in .env.example come from Graph CLI. The deployment script reads both from configuration and invokes Graph CLI in-process to keep credentials out of OS arguments.
 
 Optional agent JSON `enrollmentTx` is the successful EAC active-role grant transaction emitted by ens:deploy-agent. The backend verifies its receipt and displays the hire in the lifecycle feed.
+
+- `ENS_REGISTRATION_PAYMENT_TOKEN`: ERC20 accepted by the ETH Registrar; use the pinned ENS Sepolia MockUSDC deployment for faucet-funded registration.

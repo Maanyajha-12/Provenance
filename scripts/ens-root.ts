@@ -39,7 +39,7 @@ const abi = parseAbi([
   "function setSubregistry(uint256 id,address registry)",
 ]);
 const factoryAbi = parseAbi([
-  "function deployProxy(address implementation,uint256 salt,bytes data)",
+  "function deployProxy(address implementation,uint256 salt,bytes data) returns (address)",
   "event ProxyDeployed(address indexed sender,address indexed proxyAddress,uint256 salt,address implementation)",
 ]);
 const roles = (1n << 0n) | (1n << 8n) | (1n << 16n) | (1n << 20n) | (1n << 24n);
@@ -47,8 +47,10 @@ const all =
   roles | (roles << 128n) | (BigInt(required("ENS_ACTIVE_ROLE")) << 128n);
 async function send(request: Parameters<typeof wallet.writeContract>[0]) {
   const hash = await wallet.writeContract(request);
+  console.log(`SUBMITTED ${request.functionName}: ${hash}`);
   const receipt = await publicClient.waitForTransactionReceipt({ hash });
   if (receipt.status !== "success") throw new Error("Root setup reverted");
+  console.log(`CONFIRMED ${request.functionName}: ${hash}`);
   return receipt;
 }
 await mkdir("data", { recursive: true });
@@ -83,6 +85,7 @@ try {
   })[0];
   if (!log) throw new Error("Missing deployment event");
   registry = log.args.proxyAddress;
+  console.log(`ENS_FUND_REGISTRY=${registry}`);
   await writeFile(
     "data/root-registry.json",
     JSON.stringify(
