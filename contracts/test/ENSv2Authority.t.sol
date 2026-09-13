@@ -107,9 +107,11 @@ contract ENSv2AuthorityTest is Test {
         assertTrue(ok, "Enroll and hire live test agent first");
         ENSv2Authority adapter = ENSv2Authority(deployed);
         (IENSRegistry registry,, uint256 id,,,, address signer) = adapter.bindings(node);
+        // Read the role before prank: an external getter would consume the one-call impersonation.
+        uint256 activeRole = adapter.activeRole();
         vm.prank(adapter.allocator());
         (bool success,) = address(registry)
-            .call(abi.encodeWithSignature("revokeRoles(uint256,uint256,address)", id, adapter.activeRole(), signer));
+            .call(abi.encodeWithSignature("revokeRoles(uint256,uint256,address)", id, activeRole, signer));
         assertTrue(success);
         (ok,) = adapter.checkTrade(r);
         assertFalse(ok);
