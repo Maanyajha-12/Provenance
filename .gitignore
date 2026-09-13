@@ -13,3 +13,8 @@ substreams.live.yaml
 build/
 *.tsbuildinfo
 config/agents.json
+
+# Local environment variants and the generated oracle target symlink
+.env.*
+!.env.example
+/packages/oracle/target
