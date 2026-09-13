@@ -6,6 +6,7 @@ import {ISwapVM} from "@1inch/swap-vm/contracts/interfaces/ISwapVM.sol";
 import {Aqua} from "@1inch/aqua/src/Aqua.sol";
 import {AgentAuthorityManager} from "../src/AgentAuthorityManager.sol";
 import {AgentDesk} from "../src/AgentDesk.sol";
+import {RequireMinRate} from "@1inch/swap-vm/contracts/instructions/MinRate.sol";
 import {Context} from "@1inch/swap-vm/contracts/libs/VM.sol";
 import {IAgentAuthority} from "../src/IAgentAuthority.sol";
 import {AuthoritySwapVMRouter} from "../src/AuthoritySwapVMRouter.sol";
@@ -20,6 +21,10 @@ contract OpcodeContext {
 contract OpcodeProbe is AuthoritySwapVMRouter {
     constructor(address aqua, address weth, IAgentAuthority authority_, address desk_)
         AuthoritySwapVMRouter(aqua, weth, msg.sender, authority_, desk_) {}
+    function probeUnsupported(uint256 opcode, bytes calldata args) external {
+        Context memory ctx;
+        _runOpcode(ctx, opcode, args);
+    }
     function probe(address taker, bytes calldata args) external {
         Context memory ctx;
         ctx.query.taker = taker;
@@ -136,6 +141,36 @@ contract ExecutionTest is CoreInvariants {
         probe.probe(address(context), "");
         vm.expectRevert("desk required");
         probe.probe(address(this), "");
+    }
+
+    function testRouterFitsSepoliaRuntimeLimit() public view {
+        assertLe(address(router).code.length, 24576);
+    }
+
+    function testTrimmedInstructionsRevert() public {
+        OpcodeProbe probe = new OpcodeProbe(address(aqua), address(base), manager, address(desk));
+        vm.expectRevert(abi.encodeWithSignature("UnknownOpcode(uint256)", uint256(0x58)));
+        probe.probeUnsupported(0x58, ""); // PeggedSwap is deliberately unavailable.
+    }
+
+    function testOfficialMinimumRateStillReverts() public {
+        bool baseFirst = address(base) < address(quoteToken);
+        (address tokenA, address tokenB) = baseFirst
+            ? (address(base), address(quoteToken)) : (address(quoteToken), address(base));
+        // Require the maker to receive two input units per output unit, which the
+        // balanced XYC pool cannot meet. The desk's own taker limit remains permissive.
+        ISwapVM.Order memory guarded = new ProgramFactory().buildSigned(
+            maker, tokenA, tokenB, 10000 ether, 10000 ether,
+            baseFirst ? 1 : 2, baseFirst ? 2 : 1
+        );
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(1234, router.hash(guarded));
+        vm.prank(maker);
+        base.approve(address(router), type(uint256).max);
+        AgentDesk.TradeIntent memory i = intent(99);
+        vm.expectPartialRevert(RequireMinRate.RequireMinRateFailed.selector);
+        desk.execute(i, guarded, abi.encodePacked(r, s, v));
+        assertFalse(desk.used(i.intentId));
+        assertEq(quoteToken.balanceOf(address(this)), 1000 ether);
     }
 
     function _executeSwap(SwapVM, ISwapVM.Order memory o, address, address, uint256 amount, bytes memory)
