@@ -4,3 +4,12 @@ dist/
 out/
 cache/
 broadcast/
+.tools/
+target/
+.next/
+data/
+*.spkg
+substreams.live.yaml
+build/
+*.tsbuildinfo
+config/agents.json

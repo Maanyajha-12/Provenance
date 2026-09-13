@@ -1,0 +1,3 @@
+[
+ {"node":"PLACEHOLDER_ENS_NAMEHASH","name":"atlas.momentum.veriprocess.eth","registry":"PLACEHOLDER_STRATEGY_REGISTRY","resolver":"PLACEHOLDER_AGENT_RESOLVER","labelId":"PLACEHOLDER_DECIMAL_LABELHASH","signer":"PLACEHOLDER_AGENT_SIGNER","signerKey":"AGENT_PRIVATE_KEY","maxNotional":"100000000000000000000","maxSlippageBps":100}
+]
