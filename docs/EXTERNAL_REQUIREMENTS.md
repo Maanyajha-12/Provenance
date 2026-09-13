@@ -119,3 +119,29 @@ Each entry has `node` (namehash), `name` (full ENS name), `registry`, `resolver`
 Optional agent JSON `enrollmentTx` is the successful EAC active-role grant transaction emitted by ens:deploy-agent. The backend verifies its receipt and displays the hire in the lifecycle feed.
 
 - `ENS_REGISTRATION_PAYMENT_TOKEN`: ERC20 accepted by the ETH Registrar; use the pinned ENS Sepolia MockUSDC deployment for faucet-funded registration.
+
+### Separate signers and live demo commands
+
+Use Corepack directly if the shell has no `pnpm` shim:
+
+```bash
+corepack pnpm check
+corepack pnpm ens:deploy-agent momentum atlas "$ATLAS_ADDRESS" AGENT_PRIVATE_KEY
+corepack pnpm ens:deploy-agent hedge delta "$DELTA_ADDRESS" AGENT_02_PRIVATE_KEY
+```
+
+The fourth onboarding argument is an environment-variable **name**, never the
+private key itself. The derived signer must match the supplied public address.
+Onboarding reuses checkpointed proxies, existing registrations and matching
+records. ENSIP-26 record delegation uses `authorizeTextRoles` with the
+DNS-wire-encoded full name; registry active-role grants still use `grantRoles`,
+followed by adapter binding.
+
+After enrollment, `scripts/live-demo.ts fund` mints 100 faucet pUSD to each
+agent. `scripts/live-demo.ts intent` prepares a 1 pUSD Atlas buy for
+`corepack pnpm swap:manual`. The `revoke` command approves a fresh test intent,
+verifies that it simulates successfully, revokes Atlas, verifies that the same
+payload now fails with `authority denied`, then broadcasts it with an explicit
+1,000,000 gas limit and requires a mined reverted receipt. This command leaves
+Atlas revoked and saves evidence in `data/revoke-demo.json`; it is an explicit
+live lifecycle action, not a read-only test.

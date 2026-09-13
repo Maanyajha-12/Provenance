@@ -119,3 +119,114 @@ DNS-wire-encoded agent name. Enrollment has not reached active-role granting,
 adapter binding or desk signer registration. Atlas is not yet trade-authorized;
 Delta has not been enrolled. Resume using the existing registry/resolver
 checkpoints after correcting the permission call, rather than redeploying them.
+
+## Atlas resumed with resolver-specific authorization
+
+The previous resolver grant failure is resolved: onboarding now calls
+`authorizeTextRoles(bytes,string,address,bool)` using the DNS-wire-encoded
+full name. Existing matching records and proxies were reused. The two identity
+keys are `agent-context` and `agent-endpoint[web]`; mandate keys remain
+allocator-controlled under `fund.*`. Type-checking and the DNS calldata test pass.
+
+| Action | Confirmed transaction |
+| --- | --- |
+| Authorize agent-context | `0xd669e4c01a68902eaffb8468afc47c01a460f8713bdf7a85cbdb2fe72ea987da` |
+| Write agent-endpoint[web] | `0x3d93e7b45805eacd4767d3f6b06c805803fb9e4dd371ae32d390a75f88c5963b` |
+| Authorize agent-endpoint[web] | `0x3f5cf16c2d5ef3a08e42f621ed9ef626e05c2c438800b212061a0d29bb5242e7` |
+| Notional cap | `0xf2b8b5c2899b344d52398e0cf340afc11654e0ac041aa684c07580691edcbe1e` |
+| Slippage cap | `0x76015b2c38765492bd8c6d468e4310012665edfcb9ee8dde1408a641209bfffd` |
+| Validity deadline | `0x5b94aba10a5fca00b2fe4357644d58c5cab00b5c2e9ccbd56df23a4d5ce122c7` |
+| Instrument whitelist | `0xdb5acee129c4d27abd6c36c2d48e43c93141d2a40e41fd6f537550a7ceecaba7` |
+| Active-role grant / enrollmentTx | `0x8a341d7a10b275cc583e4aff7fe37d321539a3dd47dfeabf6d3d8f38e591a3f4` |
+| Adapter binding after grant | `0x5315d97ebc04b7762cfc7cc711ae481c61df4dd94d474cca321c0d86d727a8d4` |
+| Desk signer registration | `0x2e618c5c9edbb984bef98dd5ded7fbf655a8e506993ebe24c54c28dea8273a43` |
+
+Atlas enrollment is complete. Its binding is saved locally in
+`data/agent-atlas.json`.
+
+## Delta deployment and identity
+
+- Name: `delta.hedge.veriprocess.eth`
+- Node: `0x906154f5799bcf90f42a344305da3fbe425fcbfe8312d788eceb906f3d19bf37`
+- Strategy registry: `0x128B43E509B6F95A7E8DA5252B2A5B6842A0b101`
+- Resolver: `0xCb9a651323F9F6F2E30DDD972C77705AFaaCf307`
+- Signer: `0x572c1709767EcD39Cc8a07C4AB7eD9834093b321`
+
+| Action | Confirmed transaction |
+| --- | --- |
+| Strategy registry proxy | `0x0a0d7b00505cd7cff83c4f9c8ae9a198272c475a7c8f15b2eb9c44bf2360d8da` |
+| Resolver proxy | `0x4d605a8c12601b7dbc3fe1493e9629e00ea5b599267fce84bedd87c470d06905` |
+| Register hedge | `0xd11b208cddc80a67d10391997ed27e961dc2218d0ba3b3bbe747370fe12bf107` |
+| Strategy parent | `0x20a2781b595d293ca2750b2a9729b29439db130444a63beee5680df462437ea1` |
+| Register Delta | `0x02a0cdfc7b0c1f36261f9287652d7e6c5403beea79c2355cfdc49dbabeeb7fa6` |
+| Signer address record | `0xe5d2efdb600fe5ca6d361917a36a5c8664a201bd18a95d40df7563b9dbdb79aa` |
+| agent-context | `0xe66fe0228c1bb15e8706dc7d1dd91871cfe1382dd98bda8fd8647944e6610e99` |
+| Context permission | `0xbf8ed21a3abd2138f8647edf5d2d43723d3cbde1616e23b4671edf865e94732a` |
+| agent-endpoint[web] | `0xba9f0a29f7d9496c76e98caf65305b44fa51f59e9e011b4f832a30c03ac17a6d` |
+| Endpoint permission | `0x8154c1d770b03f32b76d0208210d68caee636ec2cc5baa305241fd183099e214` |
+| Notional cap | `0x0659398d76ec4e3ff22e03c906491e031217261f8b3d6874afc4cbf2627fcd85` |
+| Slippage cap | `0x0b608846e9aa651cfbef7a208a524f0e058fcebcda4ef856885b2cf69fba1936` |
+| Validity deadline | `0x4eeb956ca2cd343d39e0b23c0300c5a30b1fe1e61d608e761e01e5358d958f58` |
+| Instrument whitelist | `0xec0fdaad7f9a6f106791e178ea2bf2b23eec08f70e2716cfcd0ec81ae569ef17` |
+| Active role / enrollmentTx | `0x681fd9791cf5fb21aa1e82def643e52bd03bc629d859bff26dd27bf02638043e` |
+| Adapter binding after grant | `0x76dd7e43dcb6469f940a7df173059723009a18f73d30a4422d67413f78d3f0f9` |
+| Desk signer registration | `0x1f755fe743ac45c3f934594e4f01aea0a23be4d9c48e923f2e34db62d64eb590` |
+
+Both agents are enrolled. Their local bindings are combined in the ignored
+`config/agents.json`, using distinct signer-key variable names.
+
+## Live ENS fork verification
+
+Both Atlas and Delta passed `testLiveAdapterFork` against Sepolia block
+**11696150**: one pass each, zero failures, zero skips. The test verifies active
+authority and then revokes on an isolated fork, requiring authority denial.
+
+An initial run exposed a test-only impersonation bug: reading
+`adapter.activeRole()` after `vm.prank` consumed the next-call impersonation.
+The test now reads the role before the prank. No deployed contracts changed,
+and these fork tests did not revoke either agent on live Sepolia.
+
+## Liquidity and real taker fill
+
+| Action | Confirmed transaction |
+| --- | --- |
+| Mint Atlas 100 pUSD | `0xade34db8289873e179ce1b30199c9609a174a29495074fd72c3456e22a3566b6` |
+| Mint Delta 100 pUSD | `0x560262448420eb5860089d70b166e6a679bf0ec09f4ecacd1f40b75b28f70ffb` |
+| Maker pUSD approval to Aqua | `0x9be0577e41781b7d6b6b594f0c20029bb6dae7dab1d443a06f9c90c6416195ea` |
+| Maker pBASE approval to Aqua | `0x9c541b50dfb671c2426f1f770be57de6d2e7e6cbb9467d804b352b72c7e50698` |
+| Aqua ship() | `0x11baaee3aa2daebb31abd4d12a30f6fa36b07af858820b67a20c18081537c4ce` |
+| Atlas input approval to desk | `0x5e244b298ee7c56ea3eb001877ab0a66ef1008b7d5474f05a7abe9c4eea8cc3a` |
+| Live Atlas taker swap | `0x084467b9ce08eaac8e5873e59cb7b997fa73f5d4a2b25c3bf2bd74a6c41a5b92` |
+
+The real swap succeeded in block **11696164**. Its Settlement event records
+**1 pUSD in → 0.999900009999000099 pBASE out**; Fill reports price
+`1000100000000000000` and zero program fee. The original Aqua, pBASE, pUSD,
+adapter, router, desk, and program factory deployments were reused.
+The local full receipt is `data/manual-swap-receipt.json`; the reusable Aqua
+order is `data/maker-order.json`.
+
+## Revoke → mined-revert demonstration
+
+| Action | Transaction / result |
+| --- | --- |
+| Approve fresh negative-test input | `0x3d56fc35803119f6d4558b26efbf64de2eb5cff0674629d519c79a840b9aef37` — success |
+| Revoke Atlas active role | `0xbb5f97054576a9d045086f2c517c0b1d51af9869dedbbe4d06461f558dc91fd0` — success |
+| Dedicated execution with explicit gas limit | `0x6bd97ddaaaff95b57b7033d173a07c378556460f077d01e02c552f6634e26a37` — **mined reverted**, block **11696171** |
+
+The same fresh payload simulated successfully before revocation and failed
+with `authority denied` after revocation. It was then broadcast with an
+explicit 1,000,000 gas limit, so the negative result is an actual mined
+transaction. The reverted intent did not persist in the desk's `used` mapping.
+Local evidence: `data/revoke-demo.json` and
+`data/live-demo-transactions.jsonl`.
+
+This live denial occurs at the desk's authority guard. The successful live swap
+executes a program containing opcode 250 and the official minimum-rate
+instruction; the Foundry execution tests separately exercise opcode 250's
+independent revocation path.
+
+Final read-only checks confirm Atlas is unauthorized and Delta remains
+authorized. Atlas holds 99 pUSD and 0.999900009999000099 pBASE; Delta holds
+100 pUSD. Both ENSIP-26 records remain readable for each agent. The ignored
+`.env` now sets `LIVE_AGENT_NODE` to Delta for future active-agent fork checks.
+Both nodes and signer bindings remain in `config/agents.json`.
